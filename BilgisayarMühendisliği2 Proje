@@ -1,0 +1,145 @@
+"""
+----------> BİLGİSAYAR YÖNETİM SİSTEMİ <----------
+    Muhammed Yusuf Macit ve Nurullah Reis
+"""
+
+#Kütüphane Kurulumu
+import cv2
+import numpy as np 
+import math
+import pyautogui
+
+
+
+
+#Kameradan verileri okuma
+cap = cv2.VideoCapture(0,cv2.CAP_DSHOW)
+def nothing(x):
+    pass
+#Pencere Adları
+cv2.namedWindow("Renk Ayarı",cv2.WINDOW_NORMAL)
+cv2.resizeWindow("Renk Ayarıs", (300, 300)) 
+cv2.createTrackbar("Harmanlama", "Renk Ayarı", 0, 255, nothing)
+
+#Renk Tespiti ve Ayarlanması
+
+cv2.createTrackbar("Alt_H", "Renk Ayarı", 0, 255, nothing)
+cv2.createTrackbar("Alt_S", "Renk Ayarı", 0, 255, nothing)
+cv2.createTrackbar("Alt_V", "Renk Ayarı", 0, 255, nothing)
+cv2.createTrackbar("Ust_H", "Renk Ayarı", 255, 255, nothing)
+cv2.createTrackbar("Ust_S", "Renk Ayarı", 255, 255, nothing)
+cv2.createTrackbar("Ust_V", "Renk Ayarı", 255, 255, nothing)
+
+
+while True:
+    _,frame = cap.read()
+    frame = cv2.flip(frame,2)
+    frame = cv2.resize(frame,(600,500))
+    # Pencereden el verisini çekmek
+    cv2.rectangle(frame, (0,1), (300,500), (255, 0, 0), 0)
+    crop_image = frame[1:500, 0:300]
+    
+    #HSV oluşturmak
+    hsv = cv2.cvtColor(crop_image, cv2.COLOR_BGR2HSV)
+    #Eli tespit etme
+    a_h = cv2.getTrackbarPos("Alt_H", "Renk Ayarı")
+    a_s = cv2.getTrackbarPos("Alt_S", "Renk Ayarı")
+    a_v = cv2.getTrackbarPos("Alt_V", "Renk Ayarı")
+
+    u_h = cv2.getTrackbarPos("Ust_H", "Renk Ayarı")
+    u_s = cv2.getTrackbarPos("Ust_S", "Renk Ayarı")
+    u_v = cv2.getTrackbarPos("Ust_V", "Renk Ayarı")
+    #Alt sınır ve üst sınırı Numpy dizisi olarak tanımlamak
+    altsinir = np.array([a_h, a_s, a_v])
+    ustsinir = np.array([u_h, u_s, u_v])
+    
+    
+    #Maske oluşturmak
+    maske = cv2.inRange(hsv, altsinir, ustsinir)
+    #Oluşturulan maske ile veriyi işlemek/filtrelemek
+    filtre = cv2.bitwise_and(crop_image, crop_image, mask=maske)
+    
+    
+    maske1  = cv2.bitwise_not(maske)
+    m_g = cv2.getTrackbarPos("Harmanlama", "Renk Ayarı") 
+    ret,thresh = cv2.threshold(maske1,m_g,255,cv2.THRESH_BINARY)
+    dilata = cv2.dilate(thresh,(3,3),iterations = 6)
+    
+    
+    cnts,hier = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    
+    
+    try:
+        
+         
+         # Alanın sınırlarını bulmak
+        cm = max(cnts, key=lambda x: cv2.contourArea(x))
+        epsilon = 0.0005*cv2.arcLength(cm,True)
+        data= cv2.approxPolyDP(cm,epsilon,True)
+    
+        hull = cv2.convexHull(cm)
+        
+        cv2.drawContours(crop_image, [cm], -1, (50, 50, 150), 2)
+        cv2.drawContours(crop_image, [hull], -1, (0, 255, 0), 2)
+        
+       
+        # Dışbükeylik bulunan bölgeleri aramak MATEMATİK İŞLEMLERİ
+        hull = cv2.convexHull(cm, returnPoints=False)
+        defects = cv2.convexityDefects(cm, hull)
+        sayac = 0
+        for i in range(defects.shape[0]):
+            s,e,f,d = defects[i,0]
+           
+            x = tuple(cm[s][0])
+            y = tuple(cm[e][0])
+            z = tuple(cm[f][0])
+            #KOSİNÜS TEOREMİ
+            a = math.sqrt((y[0] - x[0]) ** 2 + (y[1] - x[1]) ** 2)
+            b = math.sqrt((z[0] - x[0]) ** 2 + (z[1] - x[1]) ** 2)
+            c = math.sqrt((y[0] - z[0]) ** 2 + (y[1] - y[1]) ** 2)
+            derece = (math.acos((b ** 2 + c ** 2 - a ** 2) / (2 * b * c)) * 180) / 3.14
+            print(derece)
+            # Eğer açı 50 den büyükse dışbükeylik vardır ve bu da parmak sayısıdır
+            if derece <= 50:
+                sayac += 1
+                cv2.circle(crop_image,z,5,[255,255,255],-1)
+        
+        print("sayac==",sayac)
+        
+       
+        # Parmak sayısına göre bilgisayara işlem yaptırma
+        if sayac == 0:
+            
+            cv2.putText(frame, " ", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 2,(0,0,255),2)
+        elif sayac == 1:
+            
+            pyautogui.press("space")
+            cv2.putText(frame, "Başla/Durdur", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 2,(0,0,255), 2)
+        elif sayac == 2:
+            pyautogui.press("up")
+            
+            cv2.putText(frame, "Ses Yükselt", (5, 50), cv2.FONT_HERSHEY_SIMPLEX, 2,(0,0,255), 2)
+        elif sayac == 3:
+            pyautogui.press("down")
+            
+            cv2.putText(frame, "Ses Azalt", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 2,(0,0,255), 2)
+        elif sayac == 4:
+            pyautogui.press("right")
+            
+            cv2.putText(frame, "İleri Sar", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 2,(0,0,255), 2)
+        else:
+            pass
+           
+    except:
+        pass
+    #Verilerin ekrana bastırılması    
+    cv2.imshow("Harmanlama", thresh)
+    cv2.imshow("Maske",maske)
+    cv2.imshow("Filtre",filtre)
+    cv2.imshow("Kamera", frame)
+
+    key = cv2.waitKey(25) &0xFF    
+    if key == 27: 
+        break
+cap.release()
+cv2.destroyAllWindows()
