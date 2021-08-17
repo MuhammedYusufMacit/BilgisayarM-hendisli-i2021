@@ -1,0 +1,13 @@
+MUHAMMED YUSUF MACIT OTEL YONETIM SISTEMI 170419029
+
+
+ResepsiyonTEST(Resepsiyonist) sisteme giris yapti.
+ResepsiyonTEST(Resepsiyonist), 101 adina 101 numarali odayi rezerve etti.
+ResepsiyonTEST(Resepsiyonist), 102 adina 102 numarali odayi rezerve etti.
+ResepsiyonTEST(Resepsiyonist), 103 adina 103 numarali odayi rezerve etti.
+ResepsiyonTEST(Resepsiyonist), 104 adina 104 numarali odayi rezerve etti.
+ResepsiyonTEST(Resepsiyonist), 0 adina 104 numarali odayi rezerve islemini iptal etti.
+ResepsiyonTEST(Resepsiyonist), 103 adina 103 numarali odanin CheckIn islemini yapti.
+ResepsiyonTEST(Resepsiyonist), 0 adina 103 numarali odanin CheckOut islemini yapti.
+ResepsiyonTEST(Resepsiyonist), 102 adina 102 numarali odanin CheckIn islemini yapti.
+ResepsiyonTEST(Resepsiyonist) programdan cikti.
